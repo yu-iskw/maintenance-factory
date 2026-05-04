@@ -1,0 +1,31 @@
+{
+  "name": "@typescript-template/maintenance-factory",
+  "version": "0.1.0",
+  "description": "GitHub-native maintenance control plane: policy, scanner, scheduler, webhooks, audit store.",
+  "keywords": ["github", "maintenance", "dependabot", "policy"],
+  "license": "Apache-2.0",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "maintenance-factory": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start:webhook": "node dist/cli.js serve-webhook",
+    "migrate": "node dist/cli.js migrate"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^8.1.2",
+    "@octokit/graphql": "^9.0.3",
+    "@octokit/rest": "^22.0.1",
+    "pg": "^8.16.3",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "typescript": "^5.9.3"
+  }
+}

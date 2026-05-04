@@ -1,14 +1,13 @@
-import fastify from 'fastify';
 import cors from '@fastify/cors';
+import fastify from 'fastify';
+
+import { adminRoutes } from './routes/admin';
+import { healthRoutes } from './routes/health';
+import { webhookRoutes } from './routes/webhooks';
 
 import type { ReconcilerDeps } from '@maintenance-factory/reconciler';
 import type { SchedulerHandle } from '@maintenance-factory/scheduler';
 import type { AppConfig } from '@maintenance-factory/types';
-
-import { webhookSignaturePlugin } from './middleware/webhook-signature';
-import { adminRoutes } from './routes/admin';
-import { healthRoutes } from './routes/health';
-import { webhookRoutes } from './routes/webhooks';
 
 export interface AppOptions {
   config: AppConfig;
@@ -21,11 +20,12 @@ export function buildApp(opts: AppOptions) {
 
   void app.register(cors);
 
-  void app.register(webhookSignaturePlugin, { secret: opts.config.githubWebhookSecret });
-
   void app.register(healthRoutes);
 
-  void app.register(webhookRoutes, { reconcilerDeps: opts.reconcilerDeps });
+  void app.register(webhookRoutes, {
+    reconcilerDeps: opts.reconcilerDeps,
+    webhookSecret: opts.config.githubWebhookSecret,
+  });
 
   const schedulerEnabled = { value: opts.config.schedulerEnabled };
   void app.register(adminRoutes, {

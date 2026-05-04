@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@maintenance-factory/db": "workspace:*",
-    "@maintenance-factory/types": "workspace:*"
+    "@maintenance-factory/types": "workspace:*",
+    "drizzle-orm": "^0.41.0"
   }
 }

@@ -5,9 +5,9 @@ export const metricsDaily = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     day: date('day').notNull(),
-    ownerTeam: text('owner_team'),
-    repoCriticality: text('repo_criticality'),
-    taskType: text('task_type'),
+    ownerTeam: text('owner_team').notNull().default('_all_'),
+    repoCriticality: text('repo_criticality').notNull().default('_all_'),
+    taskType: text('task_type').notNull().default('_all_'),
     openCount: integer('open_count').notNull().default(0),
     mergedCount: integer('merged_count').notNull().default(0),
     blockedCount: integer('blocked_count').notNull().default(0),

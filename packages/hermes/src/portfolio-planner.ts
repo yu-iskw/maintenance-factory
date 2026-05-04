@@ -67,6 +67,8 @@ export async function generateWeeklyPlan(
   const jsonMatch = content.text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON found in Hermes response');
 
-  const parsed = JSON.parse(jsonMatch[0]) as WeeklySummary;
+  const parsed = JSON.parse(jsonMatch[0]) as Omit<WeeklySummary, 'generatedAt'> & {
+    generatedAt: string;
+  };
   return { ...parsed, generatedAt: new Date(parsed.generatedAt) };
 }

@@ -1,3 +1,4 @@
+import { createAppAuth } from '@octokit/auth-app';
 import { Octokit } from 'octokit';
 
 export interface GithubAppConfig {
@@ -8,7 +9,7 @@ export interface GithubAppConfig {
 
 export function createAppOctokit(config: GithubAppConfig): Octokit {
   return new Octokit({
-    authStrategy: require('@octokit/auth-app').createAppAuth,
+    authStrategy: createAppAuth,
     auth: {
       appId: config.appId,
       privateKey: config.privateKey,

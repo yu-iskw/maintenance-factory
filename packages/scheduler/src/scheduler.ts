@@ -1,7 +1,8 @@
-import cron from 'node-cron';
+import { schedule } from 'node-cron';
+
+import { runHourlyJob } from './hourly-job';
 
 import type { HourlyJobDeps } from './hourly-job';
-import { runHourlyJob } from './hourly-job';
 
 export interface SchedulerHandle {
   stop: () => void;
@@ -14,13 +15,11 @@ export function startScheduler(
   const activeRunCount = { value: 0 };
   const jobDeps: HourlyJobDeps = { ...deps, activeRunCount };
 
-  const task = cron.schedule(cronExpression, async () => {
+  const task = schedule(cronExpression, () => {
     if (!deps.config.schedulerEnabled) return;
-    try {
-      await runHourlyJob(jobDeps);
-    } catch (err) {
+    void runHourlyJob(jobDeps).catch((err) => {
       console.error('[scheduler] hourly job failed:', err);
-    }
+    });
   });
 
   return {

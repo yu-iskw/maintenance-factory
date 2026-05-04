@@ -3,6 +3,8 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+import { getErrorMessage } from '@maintenance-factory/types';
+
 import type { WorkerResult, WorkerTask } from '@maintenance-factory/types';
 
 export interface CursorBackendConfig {
@@ -33,17 +35,17 @@ export async function runWithCursor(
 
     await spawnProcess('cursor', ['--headless', '--task', promptFile], { env });
 
-    if (fs.existsSync(resultFile)) {
-      const result = JSON.parse(fs.readFileSync(resultFile, 'utf-8')) as WorkerResult;
-      return result;
+    try {
+      return JSON.parse(fs.readFileSync(resultFile, 'utf-8')) as WorkerResult;
+    } catch (readErr: unknown) {
+      const nodeErr = readErr as NodeJS.ErrnoException;
+      if (nodeErr.code === 'ENOENT') {
+        return { success: false, errorMessage: 'Cursor agent produced no result file' };
+      }
+      throw readErr;
     }
-
-    return { success: false, errorMessage: 'Cursor agent produced no result file' };
   } catch (err) {
-    return {
-      success: false,
-      errorMessage: err instanceof Error ? err.message : String(err),
-    };
+    return { success: false, errorMessage: getErrorMessage(err) };
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

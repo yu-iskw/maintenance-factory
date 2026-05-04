@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PolicyConfig, PolicyContext } from '@maintenance-factory/types';
-
 import { evaluatePolicy } from './evaluator';
+
+import type { PolicyConfig, PolicyContext } from '@maintenance-factory/types';
 
 const baseConfig: PolicyConfig = {
   version: 1,
@@ -71,7 +71,7 @@ describe('evaluatePolicy', () => {
       ...baseContext,
       taskType: 'repo_hygiene_config_pr',
     });
-    // repo_hygiene_config_pr is in the list so this passes; remove it to test denial
+    expect(result.allowed).toBe(true);
     const restrictedConfig: PolicyConfig = {
       ...baseConfig,
       allowedTaskTypes: ['dependabot_shepherd'],

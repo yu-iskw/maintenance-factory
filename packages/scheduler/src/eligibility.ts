@@ -1,28 +1,22 @@
+import { getProjectItems } from '@maintenance-factory/github-client';
+
+import { buildLockKey } from './lock-manager';
+
+import type { EligibleItem, TaskStatus } from '@maintenance-factory/types';
 import type { Octokit } from 'octokit';
 
-import { getProjectItems } from '@maintenance-factory/github-client';
-import type { EligibleItem, ProjectItem } from '@maintenance-factory/types';
-
-const ELIGIBLE_STATUSES = ['Ready', 'Queued'] as const;
+const ELIGIBLE_STATUSES: TaskStatus[] = ['Ready', 'Queued'];
 
 export async function getEligibleItems(
   octokit: Octokit,
   projectId: string,
 ): Promise<EligibleItem[]> {
-  const items = await getProjectItems(
-    octokit,
-    projectId,
-    ELIGIBLE_STATUSES as unknown as import('@maintenance-factory/types').TaskStatus[],
-  );
+  const items = await getProjectItems(octokit, projectId, ELIGIBLE_STATUSES);
 
   return items
     .filter((item) => item.agentEligible && item.scheduledEligible)
     .map((item) => ({
       projectItem: item,
-      lockKey: buildItemLockKey(item),
+      lockKey: buildLockKey(item.repoFullName, item.maintenanceType, item.compositeKey),
     }));
-}
-
-function buildItemLockKey(item: ProjectItem): string {
-  return `run:${item.repoFullName}:${item.maintenanceType}:${item.compositeKey}`;
 }

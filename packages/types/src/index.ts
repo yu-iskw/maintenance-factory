@@ -1,3 +1,4 @@
+export * from './utils';
 export type * from './config';
 export type * from './github';
 export type * from './hermes';

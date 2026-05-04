@@ -1,13 +1,23 @@
-import type { Octokit } from 'octokit';
+import { randomUUID } from 'node:crypto';
 
 import { recordRunComplete, recordRunFailed, recordRunStart } from '@maintenance-factory/audit';
-import type { Db } from '@maintenance-factory/db';
-import { evaluatePolicy } from '@maintenance-factory/policy';
-import type { AppConfig, PolicyConfig, SchedulerTick, WorkerTask } from '@maintenance-factory/types';
 import { runWorker } from '@maintenance-factory/cursor-worker';
+import { evaluatePolicy } from '@maintenance-factory/policy';
+import { getErrorMessage } from '@maintenance-factory/types';
 
 import { getEligibleItems } from './eligibility';
 import { cleanStaleLocks, releaseLockByKey, tryAcquireLock } from './lock-manager';
+
+import type { Db } from '@maintenance-factory/db';
+import type {
+  AppConfig,
+  PolicyConfig,
+  SchedulerTick,
+  WorkerTask,
+} from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
+
+const PROMPT_TEMPLATE_VERSION = '1.0.0';
 
 export interface HourlyJobDeps {
   octokit: Octokit;
@@ -81,11 +91,11 @@ export async function runHourlyJob(deps: HourlyJobDeps): Promise<SchedulerTick> 
       taskBody: projectItem.lastRunSummary ?? '',
       risk: projectItem.risk,
       repoCriticality: projectItem.repoCriticality,
-      promptTemplateVersion: '1.0.0',
+      promptTemplateVersion: PROMPT_TEMPLATE_VERSION,
     };
 
     const runId = await recordRunStart(deps.db, {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       projectItemId: projectItem.id,
       repoFullName: projectItem.repoFullName,
       taskType: projectItem.maintenanceType,
@@ -94,7 +104,7 @@ export async function runHourlyJob(deps: HourlyJobDeps): Promise<SchedulerTick> 
       status: 'RUNNING',
       triggerSource: 'scheduler',
       startedAt: new Date(),
-      promptTemplateVersion: '1.0.0',
+      promptTemplateVersion: PROMPT_TEMPLATE_VERSION,
     });
 
     runWorker({ octokit: deps.octokit, db: deps.db, config: deps.config }, task)
@@ -102,7 +112,7 @@ export async function runHourlyJob(deps: HourlyJobDeps): Promise<SchedulerTick> 
         await recordRunComplete(deps.db, runId, result);
       })
       .catch(async (err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         await recordRunFailed(deps.db, runId, message);
         tick.errors.push(message);
       })

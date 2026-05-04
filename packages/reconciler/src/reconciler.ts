@@ -1,19 +1,27 @@
-import type { Octokit } from 'octokit';
-
 import { getCheckStatusForRef, getProjectItems, getPR } from '@maintenance-factory/github-client';
-import type { ProjectItem } from '@maintenance-factory/types';
 
 import { resolveProjectState } from './state-resolver';
+
+import type { TaskStatus } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export interface ReconcilerDeps {
   octokit: Octokit;
   projectId: string;
 }
 
+export interface ReconcileTarget {
+  prUrl?: string;
+  status: TaskStatus;
+  repoFullName: string;
+}
+
+const RECONCILE_BATCH_SIZE = 10;
+
 export async function reconcileItem(
   deps: ReconcilerDeps,
-  item: ProjectItem,
-): Promise<{ changed: boolean; newStatus: import('@maintenance-factory/types').TaskStatus }> {
+  item: ReconcileTarget,
+): Promise<{ changed: boolean; newStatus: TaskStatus }> {
   const { octokit } = deps;
 
   if (!item.prUrl) {
@@ -50,9 +58,10 @@ export async function reconcileAll(
   ]);
 
   let changed = 0;
-  for (const item of items) {
-    const result = await reconcileItem(deps, item);
-    if (result.changed) changed++;
+  for (let i = 0; i < items.length; i += RECONCILE_BATCH_SIZE) {
+    const batch = items.slice(i, i + RECONCILE_BATCH_SIZE);
+    const results = await Promise.all(batch.map((item) => reconcileItem(deps, item)));
+    changed += results.filter((r) => r.changed).length;
   }
 
   return { reconciled: items.length, changed };

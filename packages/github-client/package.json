@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@maintenance-factory/types": "workspace:*",
+    "@octokit/auth-app": "^7.1.1",
     "@octokit/webhooks": "^13.6.1",
     "octokit": "^4.1.2"
   }

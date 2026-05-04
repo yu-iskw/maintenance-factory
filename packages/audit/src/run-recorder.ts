@@ -1,8 +1,20 @@
-import type { Db } from '@maintenance-factory/db';
 import { insertAgentRun, updateAgentRunStatus } from '@maintenance-factory/db';
+
+import type { Db } from '@maintenance-factory/db';
 import type { AgentRun, WorkerResult } from '@maintenance-factory/types';
 
-export async function recordRunStart(db: Db, run: Omit<AgentRun, 'completedAt' | 'prUrl' | 'branchName' | 'filesChangedSummary' | 'validationSummary' | 'checkSummary' | 'errorMessage'>): Promise<string> {
+type AgentRunStartInput = Omit<
+  AgentRun,
+  | 'completedAt'
+  | 'prUrl'
+  | 'branchName'
+  | 'filesChangedSummary'
+  | 'validationSummary'
+  | 'checkSummary'
+  | 'errorMessage'
+>;
+
+export async function recordRunStart(db: Db, run: AgentRunStartInput): Promise<string> {
   const row = await insertAgentRun(db, {
     ...run,
     status: 'RUNNING',
@@ -35,11 +47,7 @@ export async function recordRunComplete(
   });
 }
 
-export async function recordRunFailed(
-  db: Db,
-  runId: string,
-  errorMessage: string,
-): Promise<void> {
+export async function recordRunFailed(db: Db, runId: string, errorMessage: string): Promise<void> {
   await updateAgentRunStatus(db, runId, {
     status: 'FAILED',
     completedAt: new Date(),

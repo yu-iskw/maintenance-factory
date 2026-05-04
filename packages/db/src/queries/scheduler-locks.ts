@@ -1,7 +1,8 @@
-import { lt, sql } from 'drizzle-orm';
+import { eq, lt } from 'drizzle-orm';
+
+import { schedulerLocks } from '../schema';
 
 import type { Db } from '../client';
-import { schedulerLocks } from '../schema';
 import type { SchedulerLockRow } from '../schema/scheduler-locks';
 
 export async function acquireLock(
@@ -22,12 +23,12 @@ export async function acquireLock(
 }
 
 export async function releaseLock(db: Db, lockKey: string): Promise<void> {
-  await db.delete(schedulerLocks).where(sql`lock_key = ${lockKey}`);
+  await db.delete(schedulerLocks).where(eq(schedulerLocks.lockKey, lockKey));
 }
 
 export async function getLock(db: Db, lockKey: string): Promise<SchedulerLockRow | undefined> {
   return db.query.schedulerLocks.findFirst({
-    where: sql`lock_key = ${lockKey}`,
+    where: eq(schedulerLocks.lockKey, lockKey),
   });
 }
 

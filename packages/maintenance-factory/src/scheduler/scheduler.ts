@@ -5,14 +5,33 @@ import { evaluatePolicy } from '../policy/engine.js';
 import type { SchedulerStore } from './store-port.js';
 import type { PolicyDocument } from '../policy/policy-document.js';
 import type { MaintenanceTaskInput, PolicyEvaluation } from '../types/domain.js';
-import type { MaintenanceWorker } from '../worker/maintenance-worker.js';
+import type { MaintenanceWorker, WorkerLaunchInput } from '../worker/maintenance-worker.js';
 
 export type SchedulerResult =
   | { launched: false; reason: string }
   | { launched: true; task: MaintenanceTaskInput; runUuid: string; cursorRunId: string };
 
-function isGloballyBlocked(store: SchedulerStore): Promise<string | undefined> {
-  return store.isGlobalPaused().then((paused) => (paused ? 'global kill switch active' : undefined));
+function buildWorkerLaunchInput(input: {
+  runUuid: string;
+  task: MaintenanceTaskInput;
+  promptTemplateVersion: string;
+  dryRun: boolean;
+}): WorkerLaunchInput {
+  return {
+    runUuid: input.runUuid,
+    repoFullName: input.task.repoFullName,
+    taskType: input.task.taskType,
+    risk: input.task.risk,
+    repoCriticality: input.task.repoCriticality,
+    taskTitle: `${input.task.taskType} for ${input.task.repoFullName}`,
+    taskBody: JSON.stringify({
+      idempotencyKey: input.task.idempotencyKey,
+      prUrl: input.task.prUrl,
+      prNumber: input.task.prNumber,
+    }),
+    promptTemplateVersion: input.promptTemplateVersion,
+    dryRun: input.dryRun,
+  };
 }
 
 async function evaluateConcurrencyCaps(
@@ -64,21 +83,14 @@ async function launchApprovedTask(input: {
 }): Promise<SchedulerResult> {
   if (input.dryRun) {
     const runUuid = randomUUID();
-    const launch = await input.worker.launch({
-      runUuid,
-      repoFullName: input.task.repoFullName,
-      taskType: input.task.taskType,
-      risk: input.task.risk,
-      repoCriticality: input.task.repoCriticality,
-      taskTitle: `${input.task.taskType} for ${input.task.repoFullName}`,
-      taskBody: JSON.stringify({
-        idempotencyKey: input.task.idempotencyKey,
-        prUrl: input.task.prUrl,
-        prNumber: input.task.prNumber,
+    const launch = await input.worker.launch(
+      buildWorkerLaunchInput({
+        runUuid,
+        task: input.task,
+        promptTemplateVersion: input.promptTemplateVersion,
+        dryRun: true,
       }),
-      promptTemplateVersion: input.promptTemplateVersion,
-      dryRun: true,
-    });
+    );
     return { launched: true, task: input.task, runUuid, cursorRunId: launch.cursorRunId };
   }
 
@@ -111,21 +123,14 @@ async function launchApprovedTask(input: {
       startedAt: new Date(),
     });
 
-    const launch = await input.worker.launch({
-      runUuid,
-      repoFullName: input.task.repoFullName,
-      taskType: input.task.taskType,
-      risk: input.task.risk,
-      repoCriticality: input.task.repoCriticality,
-      taskTitle: `${input.task.taskType} for ${input.task.repoFullName}`,
-      taskBody: JSON.stringify({
-        idempotencyKey: input.task.idempotencyKey,
-        prUrl: input.task.prUrl,
-        prNumber: input.task.prNumber,
+    const launch = await input.worker.launch(
+      buildWorkerLaunchInput({
+        runUuid,
+        task: input.task,
+        promptTemplateVersion: input.promptTemplateVersion,
+        dryRun: input.dryRun,
       }),
-      promptTemplateVersion: input.promptTemplateVersion,
-      dryRun: input.dryRun,
-    });
+    );
 
     await input.store.updateAgentRunByUuid(runUuid, {
       cursorRunId: launch.cursorRunId,
@@ -175,7 +180,7 @@ export class MaintenanceScheduler {
     options?: { dryRun?: boolean },
   ): Promise<SchedulerResult> {
     const dryRun = options?.dryRun === true;
-    const globalReason = await isGloballyBlocked(this.store);
+    const globalReason = (await this.store.isGlobalPaused()) ? 'global kill switch active' : undefined;
     if (globalReason) {
       return { launched: false, reason: globalReason };
     }

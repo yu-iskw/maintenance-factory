@@ -27,7 +27,19 @@ export async function listDependabotAlerts(
       packageName: a.security_vulnerability?.package?.name,
       ecosystem: a.security_vulnerability?.package?.ecosystem,
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    const status = getHttpStatus(error);
+    if (status === 403 || status === 404) {
+      return [];
+    }
+    throw error;
   }
+}
+
+function getHttpStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const record = error as { status?: unknown };
+  return typeof record.status === 'number' ? record.status : undefined;
 }

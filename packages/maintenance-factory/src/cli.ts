@@ -76,6 +76,25 @@ function fieldIdsFromCatalog(catalog: { fieldsByName: Record<string, { fieldId: 
   return Object.fromEntries(Object.entries(catalog.fieldsByName).map(([name, meta]) => [name, meta.fieldId]));
 }
 
+async function withPool(connectionString: string, fn: (pool: Pool) => Promise<void>): Promise<void> {
+  const pool = new Pool({ connectionString });
+  try {
+    await fn(pool);
+  } finally {
+    await pool.end();
+  }
+}
+
+async function withMaintenanceStore(
+  connectionString: string,
+  fn: (store: MaintenanceStore) => Promise<void>,
+): Promise<void> {
+  await withPool(connectionString, async (pool) => {
+    const store = new MaintenanceStore(pool);
+    await fn(store);
+  });
+}
+
 async function cmdMigrate(): Promise<void> {
   const connectionString = requireEnv('DATABASE_URL');
   const pool = new Pool({ connectionString });
@@ -140,9 +159,7 @@ async function cmdScanRepos(): Promise<void> {
   if (!connectionString) {
     return;
   }
-  const pool = new Pool({ connectionString });
-  const store = new MaintenanceStore(pool);
-  try {
+  await withMaintenanceStore(connectionString, async (store) => {
     for (const repo of repos) {
       if (repo.archived) {
         continue;
@@ -153,9 +170,7 @@ async function cmdScanRepos(): Promise<void> {
         repoCriticality: 'standard',
       });
     }
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 async function cmdPauseResume(mode: 'pause' | 'resume'): Promise<void> {
@@ -164,13 +179,9 @@ async function cmdPauseResume(mode: 'pause' | 'resume'): Promise<void> {
     throw new Error('--scope is required');
   }
   const connectionString = requireEnv('DATABASE_URL');
-  const pool = new Pool({ connectionString });
-  const store = new MaintenanceStore(pool);
-  try {
+  await withMaintenanceStore(connectionString, async (store) => {
     await store.setKillSwitch(scope, mode === 'pause');
-  } finally {
-    await pool.end();
-  }
+  });
   console.log(`${mode}: scope=${scope}`);
 }
 
@@ -178,10 +189,6 @@ async function cmdScheduleSample(): Promise<void> {
   const policyPath =
     getArg('--policy') ?? join(__dirname, '..', 'policy', 'default-policy.yaml');
   const policy = loadPolicyFromYamlFile(policyPath);
-  const connectionString = requireEnv('DATABASE_URL');
-  const pool = new Pool({ connectionString });
-  const store = new MaintenanceStore(pool);
-  const scheduler = new MaintenanceScheduler(policy, 'file:default-policy.yaml', store, new StubCursorWorker(), 'v1');
   const dryRun = hasFlag('--dry-run');
   const tasks = [
     {
@@ -204,12 +211,12 @@ async function cmdScheduleSample(): Promise<void> {
       ownerTeam: 'platform',
     },
   ];
-  try {
+  const connectionString = requireEnv('DATABASE_URL');
+  await withMaintenanceStore(connectionString, async (store) => {
+    const scheduler = new MaintenanceScheduler(policy, 'file:default-policy.yaml', store, new StubCursorWorker(), 'v1');
     const result = await scheduler.scheduleNext(tasks, { dryRun });
     console.log(JSON.stringify(result, null, 2));
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 async function cmdProjectFetchFields(): Promise<void> {
@@ -229,14 +236,10 @@ async function cmdProjectFetchFields(): Promise<void> {
   if (!connectionString) {
     return;
   }
-  const pool = new Pool({ connectionString });
-  const store = new MaintenanceStore(pool);
-  try {
+  await withMaintenanceStore(connectionString, async (store) => {
     await store.upsertProjectsV2Config(catalog.projectNodeId, fieldIds);
     console.log('saved projects_v2_config');
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 async function cmdScanSync(): Promise<void> {
@@ -256,9 +259,7 @@ async function cmdScanSync(): Promise<void> {
   const repoFullNames = repos.filter((r) => !r.archived).map((r) => r.fullName);
 
   const connectionString = requireEnv('DATABASE_URL');
-  const pool = new Pool({ connectionString });
-  const store = new MaintenanceStore(pool);
-  try {
+  await withMaintenanceStore(connectionString, async (store) => {
     const fieldIds = fieldIdsFromCatalog(catalog);
     await store.upsertProjectsV2Config(catalog.projectNodeId, fieldIds);
 
@@ -284,15 +285,12 @@ async function cmdScanSync(): Promise<void> {
       });
     }
     console.log(JSON.stringify({ dryRun, focus, results }, null, 2));
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 async function cmdHermesWeekly(): Promise<void> {
   const connectionString = requireEnv('DATABASE_URL');
-  const pool = new Pool({ connectionString });
-  try {
+  await withPool(connectionString, async (pool) => {
     const snapshot = await loadHermesPortfolioSnapshot(pool);
     const body = renderWeeklyMaintenancePlan(snapshot);
     const weekStart = new Date();
@@ -300,9 +298,7 @@ async function cmdHermesWeekly(): Promise<void> {
     const store = new MaintenanceStore(pool);
     await store.insertHermesWeeklyPlan(weekStart, body);
     console.log(body);
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 async function cmdMetricsRollup(): Promise<void> {
@@ -310,15 +306,11 @@ async function cmdMetricsRollup(): Promise<void> {
   const day = dayArg ? new Date(`${dayArg}T00:00:00.000Z`) : new Date();
   day.setUTCHours(0, 0, 0, 0);
   const connectionString = requireEnv('DATABASE_URL');
-  const pool = new Pool({ connectionString });
-  const store = new MaintenanceStore(pool);
-  try {
+  await withMaintenanceStore(connectionString, async (store) => {
     await store.rollupMetricsForDay(day);
     const rows = await store.listMetricsDaily(14);
     console.log(JSON.stringify({ day: day.toISOString().slice(0, 10), rows }, null, 2));
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 async function main(): Promise<void> {

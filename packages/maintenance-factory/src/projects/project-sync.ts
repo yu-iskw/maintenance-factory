@@ -1,4 +1,3 @@
-
 import { listDependabotAlerts } from '../github/dependabot-alerts.js';
 import { isLikelyDependabotPr, listOpenPullRequests } from '../github/scanner.js';
 
@@ -34,7 +33,9 @@ function parseRepo(fullName: string): { owner: string; repo: string } | undefine
   return { owner: parts[0], repo: parts[1] };
 }
 
-function mapSeverityToRisk(severity?: string): 'low' | 'medium' | 'high' | 'critical' {
+type SeverityTier = 'critical' | 'high' | 'medium' | 'low';
+
+function severityTier(severity?: string): SeverityTier {
   const s = severity?.toLowerCase() ?? '';
   if (s === 'critical') {
     return 'critical';
@@ -46,6 +47,14 @@ function mapSeverityToRisk(severity?: string): 'low' | 'medium' | 'high' | 'crit
     return 'medium';
   }
   return 'low';
+}
+
+function projectSelectLabelForTier(tier: SeverityTier): string {
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+}
+
+function projectLabelForAdvisorySeverity(severity?: string): string {
+  return projectSelectLabelForTier(severityTier(severity));
 }
 
 /* eslint-disable security/detect-object-injection -- Project field catalog is trusted operator config */
@@ -210,6 +219,25 @@ async function syncOneDependabotPr(input: {
   return ensured.created ? { kind: 'created' } : { kind: 'updated' };
 }
 
+function bumpSyncCounts(
+  counters: { created: number; updated: number },
+  result: { kind: 'dry'; wouldCreate: boolean } | { kind: 'created' } | { kind: 'updated' },
+): void {
+  if (result.kind === 'dry') {
+    if (result.wouldCreate) {
+      counters.created += 1;
+    } else {
+      counters.updated += 1;
+    }
+    return;
+  }
+  if (result.kind === 'created') {
+    counters.created += 1;
+  } else {
+    counters.updated += 1;
+  }
+}
+
 export async function syncDependabotShepherdProjectItems(input: {
   gql: GraphqlFn;
   octokit: Octokit;
@@ -218,8 +246,7 @@ export async function syncDependabotShepherdProjectItems(input: {
   repoFullNames: readonly string[];
   dryRun: boolean;
 }): Promise<{ created: number; updated: number }> {
-  let created = 0;
-  let updated = 0;
+  const counters = { created: 0, updated: 0 };
   const now = Date.now();
 
   for (const repoFullName of input.repoFullNames) {
@@ -241,51 +268,11 @@ export async function syncDependabotShepherdProjectItems(input: {
       if (result.kind === 'skip') {
         continue;
       }
-      if (result.kind === 'dry') {
-        if (result.wouldCreate) {
-          created += 1;
-        } else {
-          updated += 1;
-        }
-        continue;
-      }
-      if (result.kind === 'created') {
-        created += 1;
-      } else {
-        updated += 1;
-      }
+      bumpSyncCounts(counters, result);
     }
   }
 
-  return { created, updated };
-}
-
-function severityLabel(alert: { severity?: string }): string {
-  const s = alert.severity?.toLowerCase() ?? '';
-  if (s === 'critical') {
-    return 'Critical';
-  }
-  if (s === 'high') {
-    return 'High';
-  }
-  if (s === 'medium') {
-    return 'Medium';
-  }
-  return 'Low';
-}
-
-function riskOptionFromSeverity(alert: { severity?: string }): string {
-  const risk = mapSeverityToRisk(alert.severity);
-  if (risk === 'critical') {
-    return 'Critical';
-  }
-  if (risk === 'high') {
-    return 'High';
-  }
-  if (risk === 'medium') {
-    return 'Medium';
-  }
-  return 'Low';
+  return counters;
 }
 
 type DependabotAlertRow = Awaited<ReturnType<typeof listDependabotAlerts>>[number];
@@ -331,8 +318,9 @@ async function syncOneSecurityAlert(input: {
   const ctx: ProjectWriteCtx = { gql: input.gql, catalog: input.catalog, itemId: ensured.itemId };
   await setSelect(ctx, F_STATUS, 'Ready');
   await setSelect(ctx, F_MAINTENANCE_TYPE, 'Security Patch');
-  await setSelect(ctx, F_SEVERITY, severityLabel(input.alert));
-  await setSelect(ctx, F_RISK, riskOptionFromSeverity(input.alert));
+  const advisoryLabel = projectLabelForAdvisorySeverity(input.alert.severity);
+  await setSelect(ctx, F_SEVERITY, advisoryLabel);
+  await setSelect(ctx, F_RISK, advisoryLabel);
   await setSelect(ctx, F_REPO_CRITICALITY, 'Standard');
   await setBool(ctx, F_AGENT_ELIGIBLE, true);
   await setBool(ctx, F_SCHEDULED_ELIGIBLE, true);
@@ -360,8 +348,7 @@ export async function syncDirectSecurityPatchItems(input: {
   repoFullNames: readonly string[];
   dryRun: boolean;
 }): Promise<{ created: number; updated: number }> {
-  let created = 0;
-  let updated = 0;
+  const counters = { created: 0, updated: 0 };
 
   for (const repoFullName of input.repoFullNames) {
     const parsed = parseRepo(repoFullName);
@@ -378,21 +365,9 @@ export async function syncDirectSecurityPatchItems(input: {
         repoFullName,
         alert,
       });
-      if (result.kind === 'dry') {
-        if (result.wouldCreate) {
-          created += 1;
-        } else {
-          updated += 1;
-        }
-        continue;
-      }
-      if (result.kind === 'created') {
-        created += 1;
-      } else {
-        updated += 1;
-      }
+      bumpSyncCounts(counters, result);
     }
   }
 
-  return { created, updated };
+  return counters;
 }

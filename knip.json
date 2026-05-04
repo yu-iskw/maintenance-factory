@@ -6,7 +6,39 @@
       "entry": ["stylelint.config.mjs"],
       "project": ["**/*.{js,cjs,mjs,ts,cts,mts}", "!packages/**", "!.trunk/**", "!node_modules/**"]
     },
-    "packages/*": {
+    "packages/types": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/db": {
+      "entry": ["src/index.ts", "drizzle.config.ts"],
+      "project": ["src/**/*.ts", "drizzle.config.ts"]
+    },
+    "packages/github-client": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/policy": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/scanner": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/reconciler": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/audit": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/cursor-worker": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/scheduler": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/hermes": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/webhook-server": {
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     }
   }

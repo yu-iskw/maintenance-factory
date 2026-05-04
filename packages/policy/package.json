@@ -1,0 +1,23 @@
+{
+  "name": "@maintenance-factory/policy",
+  "version": "1.0.0",
+  "description": "Policy engine: YAML config loader and rule evaluator for agent execution gating.",
+  "license": "Apache-2.0",
+  "author": "",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@maintenance-factory/types": "workspace:*",
+    "js-yaml": "^4.1.0",
+    "micromatch": "^4.0.8",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/micromatch": "^4.0.9"
+  }
+}

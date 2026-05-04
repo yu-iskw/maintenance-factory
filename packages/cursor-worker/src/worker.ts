@@ -1,11 +1,10 @@
-import type { Octokit } from 'octokit';
-
-import type { Db } from '@maintenance-factory/db';
-import type { AppConfig, WorkerResult, WorkerTask } from '@maintenance-factory/types';
-
 import { runWithCopilot } from './copilot-backend';
 import { runWithCursor } from './cursor-backend';
 import { renderPrompt } from './prompt-renderer';
+
+import type { Db } from '@maintenance-factory/db';
+import type { AppConfig, WorkerResult, WorkerTask } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export interface WorkerDeps {
   octokit: Octokit;

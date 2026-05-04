@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import type { Db } from '../client';
 import { repoProfiles } from '../schema';
+
+import type { Db } from '../client';
 import type { NewRepoProfileRow, RepoProfileRow } from '../schema/repo-profiles';
 
 export async function upsertRepoProfile(

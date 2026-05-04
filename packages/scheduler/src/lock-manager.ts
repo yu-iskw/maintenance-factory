@@ -1,7 +1,8 @@
 import * as os from 'node:os';
 
-import type { Db } from '@maintenance-factory/db';
 import { acquireLock, cleanExpiredLocks, releaseLock } from '@maintenance-factory/db';
+
+import type { Db } from '@maintenance-factory/db';
 
 export function buildLockKey(repoFullName: string, taskType: string, compositeKey: string): string {
   return `run:${repoFullName}:${taskType}:${compositeKey}`;

@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { PullRequest } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 function mapPR(data: Record<string, unknown>): PullRequest {
   const d = data as {
@@ -29,7 +28,12 @@ function mapPR(data: Record<string, unknown>): PullRequest {
   };
 }
 
-export async function getPR(octokit: Octokit, owner: string, repo: string, pullNumber: number): Promise<PullRequest> {
+export async function getPR(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  pullNumber: number,
+): Promise<PullRequest> {
   const { data } = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
   return mapPR(data as unknown as Record<string, unknown>);
 }
@@ -54,7 +58,11 @@ export async function updatePRBody(
   await octokit.rest.pulls.update({ owner, repo, pull_number: pullNumber, body });
 }
 
-export async function listOpenPRs(octokit: Octokit, owner: string, repo: string): Promise<PullRequest[]> {
+export async function listOpenPRs(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+): Promise<PullRequest[]> {
   const prs: PullRequest[] = [];
   for await (const { data } of octokit.paginate.iterator(octokit.rest.pulls.list, {
     owner,

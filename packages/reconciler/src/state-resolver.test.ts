@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CheckStatus, PullRequest } from '@maintenance-factory/types';
-
 import { resolveProjectState } from './state-resolver';
+
+import type { CheckStatus, PullRequest } from '@maintenance-factory/types';
 
 const openPR: PullRequest = {
   number: 1,

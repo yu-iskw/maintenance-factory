@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { DependabotAlert } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export async function listDependabotAlerts(
   octokit: Octokit,
@@ -39,7 +38,9 @@ export async function listDependabotPRs(
   octokit: Octokit,
   owner: string,
   repo: string,
-): Promise<Array<{ number: number; title: string; url: string; createdAt: Date; updatedAt: Date }>> {
+): Promise<
+  Array<{ number: number; title: string; url: string; createdAt: Date; updatedAt: Date }>
+> {
   const prs = [];
   for await (const { data } of octokit.paginate.iterator(octokit.rest.pulls.list, {
     owner,

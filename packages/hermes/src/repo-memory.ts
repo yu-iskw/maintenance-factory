@@ -1,5 +1,6 @@
-import type { Db } from '@maintenance-factory/db';
 import { getRepoProfile, upsertRepoProfile } from '@maintenance-factory/db';
+
+import type { Db } from '@maintenance-factory/db';
 import type { RepoProfile } from '@maintenance-factory/types';
 
 export async function readRepoProfile(

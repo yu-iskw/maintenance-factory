@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { ProjectItem, TaskStatus, TaskType } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 const PROJECT_ITEM_FRAGMENT = `
   fragment ProjectItemFields on ProjectV2Item {

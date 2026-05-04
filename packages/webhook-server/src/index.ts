@@ -1,5 +1,5 @@
-import { createAppOctokit } from '@maintenance-factory/github-client';
 import { createClient } from '@maintenance-factory/db';
+import { createAppOctokit } from '@maintenance-factory/github-client';
 import { loadPolicy } from '@maintenance-factory/policy';
 import { startScheduler } from '@maintenance-factory/scheduler';
 
@@ -18,10 +18,7 @@ async function main(): Promise<void> {
 
   const reconcilerDeps = { octokit, projectId: config.githubProjectId };
 
-  const schedulerHandle = startScheduler(
-    { octokit, db, policy, config },
-    config.schedulerCron,
-  );
+  const schedulerHandle = startScheduler({ octokit, db, policy, config }, config.schedulerCron);
 
   const app = buildApp({ config, reconcilerDeps, schedulerHandle });
 

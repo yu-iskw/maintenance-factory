@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { CodeScanningAlert } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export async function listCodeScanningAlerts(
   octokit: Octokit,

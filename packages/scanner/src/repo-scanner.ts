@@ -1,7 +1,7 @@
-import type { Octokit } from 'octokit';
-
 import { hasCodeownersFile, listOrgRepos } from '@maintenance-factory/github-client';
+
 import type { RepoMetadata } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export interface RepoScanResult {
   repo: RepoMetadata;
@@ -9,10 +9,7 @@ export interface RepoScanResult {
   hasDependabotConfig: boolean;
 }
 
-export async function scanOrgRepos(
-  octokit: Octokit,
-  org: string,
-): Promise<RepoMetadata[]> {
+export async function scanOrgRepos(octokit: Octokit, org: string): Promise<RepoMetadata[]> {
   return listOrgRepos(octokit, org);
 }
 

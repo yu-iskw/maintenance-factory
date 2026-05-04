@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { WorkerResult, WorkerTask } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 const POLL_INTERVAL_MS = 10_000;
 const MAX_POLL_ATTEMPTS = 60;

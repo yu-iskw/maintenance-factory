@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { RepoMetadata } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export async function getRepo(
   octokit: Octokit,
@@ -24,10 +23,7 @@ export async function getRepo(
   };
 }
 
-export async function listOrgRepos(
-  octokit: Octokit,
-  org: string,
-): Promise<RepoMetadata[]> {
+export async function listOrgRepos(octokit: Octokit, org: string): Promise<RepoMetadata[]> {
   const repos: RepoMetadata[] = [];
   for await (const { data } of octokit.paginate.iterator(octokit.rest.repos.listForOrg, {
     org,
@@ -54,7 +50,11 @@ export async function listOrgRepos(
   return repos;
 }
 
-export async function hasCodeownersFile(octokit: Octokit, owner: string, repo: string): Promise<boolean> {
+export async function hasCodeownersFile(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+): Promise<boolean> {
   for (const path of ['CODEOWNERS', '.github/CODEOWNERS', 'docs/CODEOWNERS']) {
     try {
       await octokit.rest.repos.getContent({ owner, repo, path });

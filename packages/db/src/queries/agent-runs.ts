@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import type { Db } from '../client';
 import { agentRuns } from '../schema';
+
+import type { Db } from '../client';
 import type { AgentRunRow, NewAgentRunRow } from '../schema/agent-runs';
 
 export async function insertAgentRun(db: Db, run: NewAgentRunRow): Promise<AgentRunRow> {
@@ -13,13 +14,21 @@ export async function insertAgentRun(db: Db, run: NewAgentRunRow): Promise<Agent
 export async function updateAgentRunStatus(
   db: Db,
   id: string,
-  update: Partial<Pick<AgentRunRow, 'status' | 'completedAt' | 'prUrl' | 'branchName' | 'filesChangedSummary' | 'validationSummary' | 'checkSummary' | 'errorMessage'>>,
+  update: Partial<
+    Pick<
+      AgentRunRow,
+      | 'status'
+      | 'completedAt'
+      | 'prUrl'
+      | 'branchName'
+      | 'filesChangedSummary'
+      | 'validationSummary'
+      | 'checkSummary'
+      | 'errorMessage'
+    >
+  >,
 ): Promise<AgentRunRow> {
-  const [updated] = await db
-    .update(agentRuns)
-    .set(update)
-    .where(eq(agentRuns.id, id))
-    .returning();
+  const [updated] = await db.update(agentRuns).set(update).where(eq(agentRuns.id, id)).returning();
   if (!updated) throw new Error(`Agent run not found: ${id}`);
   return updated;
 }

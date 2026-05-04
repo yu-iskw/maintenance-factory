@@ -1,9 +1,9 @@
-import type { Octokit } from 'octokit';
-
 import { listDependabotAlerts, listDependabotPRs } from '@maintenance-factory/github-client';
-import type { DependabotAlert } from '@maintenance-factory/types';
 
 import { buildCompositeKey } from './composite-key';
+
+import type { DependabotAlert } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export interface DependabotScanResult {
   repoFullName: string;

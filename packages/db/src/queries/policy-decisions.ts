@@ -1,5 +1,6 @@
-import type { Db } from '../client';
 import { policyDecisions } from '../schema';
+
+import type { Db } from '../client';
 import type { NewPolicyDecisionRow, PolicyDecisionRow } from '../schema/policy-decisions';
 
 export async function insertPolicyDecision(

@@ -2,9 +2,9 @@ import * as fs from 'node:fs';
 
 import * as yaml from 'js-yaml';
 
-import type { PolicyConfig } from '@maintenance-factory/types';
-
 import { policyConfigSchema } from './schema';
+
+import type { PolicyConfig } from '@maintenance-factory/types';
 
 export function loadPolicy(filePath: string): PolicyConfig {
   const raw = fs.readFileSync(filePath, 'utf-8');

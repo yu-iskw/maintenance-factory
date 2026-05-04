@@ -1,6 +1,5 @@
-import type { Octokit } from 'octokit';
-
 import type { CheckStatus } from '@maintenance-factory/types';
+import type { Octokit } from 'octokit';
 
 export async function getCheckStatusForRef(
   octokit: Octokit,
@@ -12,7 +11,12 @@ export async function getCheckStatusForRef(
   const runs = data.check_runs;
 
   type CheckRun = (typeof runs)[number];
-  const failed = runs.filter((r: CheckRun) => r.conclusion === 'failure' || r.conclusion === 'timed_out' || r.conclusion === 'action_required');
+  const failed = runs.filter(
+    (r: CheckRun) =>
+      r.conclusion === 'failure' ||
+      r.conclusion === 'timed_out' ||
+      r.conclusion === 'action_required',
+  );
   const pending = runs.filter((r: CheckRun) => r.status === 'in_progress' || r.status === 'queued');
   const allSuccess = failed.length === 0 && pending.length === 0 && runs.length > 0;
 
@@ -22,7 +26,7 @@ export async function getCheckStatusForRef(
 
   return {
     state,
-    conclusion: failed[0]?.conclusion as CheckStatus['conclusion'] ?? null,
+    conclusion: (failed[0]?.conclusion as CheckStatus['conclusion']) ?? null,
     totalCount: runs.length,
     failedCount: failed.length,
     pendingCount: pending.length,

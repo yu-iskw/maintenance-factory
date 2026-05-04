@@ -1,7 +1,8 @@
 import { sql } from 'drizzle-orm';
 
-import type { Db } from '../client';
 import { metricsDaily } from '../schema';
+
+import type { Db } from '../client';
 import type { MetricsDailyRow, NewMetricsDailyRow } from '../schema/metrics-daily';
 
 export async function upsertDailyMetric(
@@ -12,7 +13,12 @@ export async function upsertDailyMetric(
     .insert(metricsDaily)
     .values(metric)
     .onConflictDoUpdate({
-      target: [metricsDaily.day, metricsDaily.ownerTeam, metricsDaily.repoCriticality, metricsDaily.taskType],
+      target: [
+        metricsDaily.day,
+        metricsDaily.ownerTeam,
+        metricsDaily.repoCriticality,
+        metricsDaily.taskType,
+      ],
       set: {
         openCount: metric.openCount ?? 0,
         mergedCount: metric.mergedCount ?? 0,

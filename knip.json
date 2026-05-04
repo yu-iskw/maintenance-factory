@@ -6,7 +6,12 @@
       "entry": ["stylelint.config.mjs"],
       "project": ["**/*.{js,cjs,mjs,ts,cts,mts}", "!packages/**", "!.trunk/**", "!node_modules/**"]
     },
-    "packages/*": {
+    "packages/common": {
+      "entry": "package.json",
+      "project": ["src/**/*.ts"]
+    },
+    "packages/maintenance-factory": {
+      "entry": "package.json",
       "project": ["src/**/*.ts"]
     }
   }

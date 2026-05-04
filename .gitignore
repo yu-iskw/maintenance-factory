@@ -37,6 +37,9 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
+# Local CI bootstrap (downloaded Node tarball for agent environments)
+.ci-tools/
+
 # Dependency directories
 node_modules/
 jspm_packages/

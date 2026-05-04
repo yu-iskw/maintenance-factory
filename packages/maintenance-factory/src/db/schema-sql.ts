@@ -90,4 +90,40 @@ create table if not exists kill_switches (
 insert into kill_switches (scope, paused)
 values ('global', false)
 on conflict (scope) do nothing;
+
+create table if not exists projects_v2_config (
+  project_node_id text primary key,
+  field_ids jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+
+create table if not exists project_item_index (
+  idempotency_key text primary key,
+  project_node_id text not null,
+  project_item_id text not null,
+  repo_full_name text not null,
+  task_type text not null,
+  external_id text,
+  title text,
+  updated_at timestamptz default now()
+);
+
+create index if not exists project_item_index_repo_idx on project_item_index (repo_full_name);
+
+create table if not exists hermes_weekly_plans (
+  id bigserial primary key,
+  week_start date not null,
+  body_markdown text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists hermes_weekly_plans_week_idx on hermes_weekly_plans (week_start desc);
+
+create table if not exists failure_signatures (
+  signature text primary key,
+  count int not null default 0,
+  last_seen_at timestamptz default now(),
+  example_repo text,
+  example_task_type text
+);
 `;

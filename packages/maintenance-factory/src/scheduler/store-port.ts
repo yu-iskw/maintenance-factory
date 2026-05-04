@@ -4,6 +4,9 @@ export type SchedulerStore = {
   isGlobalPaused(): Promise<boolean>;
   isRepoPaused(repoFullName: string): Promise<boolean>;
   isTaskTypePaused(taskType: string): Promise<boolean>;
+  isEcosystemPaused(ecosystem: string): Promise<boolean>;
+  isCriticalReposPaused(): Promise<boolean>;
+  isCursorWorkerDisabled(): Promise<boolean>;
   insertPolicyDecision(input: {
     githubProjectItemId?: string;
     repoFullName: string;

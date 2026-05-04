@@ -60,7 +60,28 @@ async function launchApprovedTask(input: {
   promptTemplateVersion: string;
   task: MaintenanceTaskInput;
   decision: PolicyEvaluation;
+  dryRun: boolean;
 }): Promise<SchedulerResult> {
+  if (input.dryRun) {
+    const runUuid = randomUUID();
+    const launch = await input.worker.launch({
+      runUuid,
+      repoFullName: input.task.repoFullName,
+      taskType: input.task.taskType,
+      risk: input.task.risk,
+      repoCriticality: input.task.repoCriticality,
+      taskTitle: `${input.task.taskType} for ${input.task.repoFullName}`,
+      taskBody: JSON.stringify({
+        idempotencyKey: input.task.idempotencyKey,
+        prUrl: input.task.prUrl,
+        prNumber: input.task.prNumber,
+      }),
+      promptTemplateVersion: input.promptTemplateVersion,
+      dryRun: true,
+    });
+    return { launched: true, task: input.task, runUuid, cursorRunId: launch.cursorRunId };
+  }
+
   const lockKey = `repo:${input.task.repoFullName}`;
   const acquired = await input.store.tryAcquireLock(
     lockKey,
@@ -103,7 +124,7 @@ async function launchApprovedTask(input: {
         prNumber: input.task.prNumber,
       }),
       promptTemplateVersion: input.promptTemplateVersion,
-      dryRun: false,
+      dryRun: input.dryRun,
     });
 
     await input.store.updateAgentRunByUuid(runUuid, {
@@ -133,17 +154,37 @@ export class MaintenanceScheduler {
     private readonly promptTemplateVersion: string,
   ) {}
 
-  async scheduleNext(tasks: MaintenanceTaskInput[]): Promise<SchedulerResult> {
+  private async shouldSkipTask(task: MaintenanceTaskInput): Promise<boolean> {
+    if (await this.store.isRepoPaused(task.repoFullName)) {
+      return true;
+    }
+    if (await this.store.isTaskTypePaused(task.taskType)) {
+      return true;
+    }
+    if (task.ecosystem && (await this.store.isEcosystemPaused(task.ecosystem))) {
+      return true;
+    }
+    if (task.repoCriticality === 'critical' && (await this.store.isCriticalReposPaused())) {
+      return true;
+    }
+    return false;
+  }
+
+  async scheduleNext(
+    tasks: MaintenanceTaskInput[],
+    options?: { dryRun?: boolean },
+  ): Promise<SchedulerResult> {
+    const dryRun = options?.dryRun === true;
     const globalReason = await isGloballyBlocked(this.store);
     if (globalReason) {
       return { launched: false, reason: globalReason };
     }
+    if (await this.store.isCursorWorkerDisabled()) {
+      return { launched: false, reason: 'cursor worker disabled' };
+    }
 
     for (const task of tasks) {
-      if (await this.store.isRepoPaused(task.repoFullName)) {
-        continue;
-      }
-      if (await this.store.isTaskTypePaused(task.taskType)) {
+      if (await this.shouldSkipTask(task)) {
         continue;
       }
 
@@ -177,6 +218,7 @@ export class MaintenanceScheduler {
         promptTemplateVersion: this.promptTemplateVersion,
         task,
         decision,
+        dryRun,
       });
       if (launchResult.launched) {
         return launchResult;

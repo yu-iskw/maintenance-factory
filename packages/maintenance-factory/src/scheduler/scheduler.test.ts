@@ -32,6 +32,15 @@ function createFakeStore() {
     async isTaskTypePaused() {
       return false;
     },
+    async isEcosystemPaused() {
+      return false;
+    },
+    async isCriticalReposPaused() {
+      return false;
+    },
+    async isCursorWorkerDisabled() {
+      return false;
+    },
     async insertPolicyDecision(input: Record<string, unknown>) {
       this.decisions.push(input);
     },
@@ -124,5 +133,37 @@ describe('MaintenanceScheduler', () => {
     ]);
     expect(result.launched).toBe(true);
     expect(worker.launch).toHaveBeenCalledTimes(1);
+  });
+
+  it('dry run does not write agent_runs', async () => {
+    const store = createFakeStore();
+    const worker = { launch: vi.fn(async () => ({ cursorRunId: 'dry-run:abc', dryRun: true })) };
+    const scheduler = new MaintenanceScheduler(policy, 'test', store, worker, 'v1');
+    const result = await scheduler.scheduleNext(
+      [
+        {
+          idempotencyKey: 'k',
+          repoFullName: 'acme/a',
+          taskType: 'dependabot_shepherd',
+          workflowStatus: 'ready',
+          risk: 'low',
+          repoCriticality: 'standard',
+          agentEligible: true,
+          scheduledEligible: true,
+          agentStatus: 'not_run',
+          retryCount: 0,
+          hasConflictingOpenPr: false,
+          hasActiveRunForRepoTask: false,
+          repoArchived: false,
+          repoInstalled: true,
+          repoProfileExists: true,
+          ownerTeam: 'platform',
+        },
+      ],
+      { dryRun: true },
+    );
+    expect(result.launched).toBe(true);
+    expect(store.runs.length).toBe(0);
+    expect(worker.launch).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true }));
   });
 });

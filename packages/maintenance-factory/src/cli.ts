@@ -7,21 +7,31 @@ import { Pool } from 'pg';
 import { applySchema } from './db/migrate.js';
 import { MaintenanceStore } from './db/store.js';
 import { createInstallationOctokit } from './github/app-auth.js';
+import { createInstallationGraphql } from './github/graphql-client.js';
 import { listInstallationRepositories } from './github/scanner.js';
+import { loadHermesPortfolioSnapshot, renderWeeklyMaintenancePlan } from './hermes/week-plan.js';
 import { loadPolicyFromYamlFile } from './policy/policy-document.js';
+import { syncDependabotShepherdProjectItems, syncDirectSecurityPatchItems } from './projects/project-sync.js';
+import { fetchProjectFieldCatalog } from './projects/v2-client.js';
 import { MaintenanceScheduler } from './scheduler/scheduler.js';
 import { startWebhookServer } from './webhook/server.js';
 import { StubCursorWorker } from './worker/stub-cursor-worker.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const INSTALLATION_ID_ARG = '--installation-id';
+
 function usage(): never {
   console.error(`Usage:
   maintenance-factory migrate
   maintenance-factory serve-webhook --port 8787
   maintenance-factory scan-repos --installation-id <id> [--dry-run]
-  maintenance-factory schedule-sample [--policy <path>]
-  maintenance-factory pause --scope global|repo:<full>|task:<type>
+  maintenance-factory project-fetch-fields --org <login> --project-number <n> --installation-id <id>
+  maintenance-factory scan-sync --org <login> --project-number <n> --installation-id <id> [--dry-run] [--focus dependabot|security|all]
+  maintenance-factory schedule-sample [--policy <path>] [--dry-run]
+  maintenance-factory hermes-weekly
+  maintenance-factory metrics-rollup [--day YYYY-MM-DD]
+  maintenance-factory pause --scope global|repo:<full>|task:<type>|eco:<name>|critical_repos|cursor_worker
   maintenance-factory resume --scope <same>
 `);
   process.exit(1);
@@ -46,6 +56,24 @@ function requireEnv(name: string): string {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
+}
+
+function loadGitHubAppCreds(): {
+  appId: string;
+  privateKey: string;
+  clientId?: string;
+  clientSecret?: string;
+} {
+  return {
+    appId: requireEnv('GITHUB_APP_ID'),
+    privateKey: requireEnv('GITHUB_APP_PRIVATE_KEY'),
+    clientId: process.env.GITHUB_APP_CLIENT_ID,
+    clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+  };
+}
+
+function fieldIdsFromCatalog(catalog: { fieldsByName: Record<string, { fieldId: string }> }): Record<string, string> {
+  return Object.fromEntries(Object.entries(catalog.fieldsByName).map(([name, meta]) => [name, meta.fieldId]));
 }
 
 async function cmdMigrate(): Promise<void> {
@@ -94,17 +122,12 @@ function summarizeWebhook(event: string, body: unknown): string {
 }
 
 async function cmdScanRepos(): Promise<void> {
-  const installationId = Number(getArg('--installation-id'));
+  const installationId = Number(getArg(INSTALLATION_ID_ARG));
   if (!Number.isFinite(installationId)) {
-    throw new Error('--installation-id is required');
+    throw new Error(`${INSTALLATION_ID_ARG} is required`);
   }
   const dryRun = hasFlag('--dry-run');
-  const creds = {
-    appId: requireEnv('GITHUB_APP_ID'),
-    privateKey: requireEnv('GITHUB_APP_PRIVATE_KEY'),
-    clientId: process.env.GITHUB_APP_CLIENT_ID,
-    clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
-  };
+  const creds = loadGitHubAppCreds();
   const octokit = await createInstallationOctokit(creds, installationId);
   const repos = await listInstallationRepositories(octokit);
   console.log(JSON.stringify({ dryRun, repoCount: repos.length, sample: repos.slice(0, 5) }, null, 2));
@@ -159,6 +182,7 @@ async function cmdScheduleSample(): Promise<void> {
   const pool = new Pool({ connectionString });
   const store = new MaintenanceStore(pool);
   const scheduler = new MaintenanceScheduler(policy, 'file:default-policy.yaml', store, new StubCursorWorker(), 'v1');
+  const dryRun = hasFlag('--dry-run');
   const tasks = [
     {
       idempotencyKey: 'k1',
@@ -181,8 +205,117 @@ async function cmdScheduleSample(): Promise<void> {
     },
   ];
   try {
-    const result = await scheduler.scheduleNext(tasks);
+    const result = await scheduler.scheduleNext(tasks, { dryRun });
     console.log(JSON.stringify(result, null, 2));
+  } finally {
+    await pool.end();
+  }
+}
+
+async function cmdProjectFetchFields(): Promise<void> {
+  const org = getArg('--org');
+  const projectNumber = Number(getArg('--project-number'));
+  const installationId = Number(getArg(INSTALLATION_ID_ARG));
+  if (!org || !Number.isFinite(projectNumber) || !Number.isFinite(installationId)) {
+    throw new Error(`--org, --project-number, and ${INSTALLATION_ID_ARG} are required`);
+  }
+  const creds = loadGitHubAppCreds();
+  const gql = await createInstallationGraphql(creds, installationId);
+  const catalog = await fetchProjectFieldCatalog(gql, org, projectNumber);
+  const fieldIds = fieldIdsFromCatalog(catalog);
+  console.log(JSON.stringify({ projectNodeId: catalog.projectNodeId, fieldIds }, null, 2));
+
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    return;
+  }
+  const pool = new Pool({ connectionString });
+  const store = new MaintenanceStore(pool);
+  try {
+    await store.upsertProjectsV2Config(catalog.projectNodeId, fieldIds);
+    console.log('saved projects_v2_config');
+  } finally {
+    await pool.end();
+  }
+}
+
+async function cmdScanSync(): Promise<void> {
+  const org = getArg('--org');
+  const projectNumber = Number(getArg('--project-number'));
+  const installationId = Number(getArg(INSTALLATION_ID_ARG));
+  const focus = getArg('--focus') ?? 'all';
+  if (!org || !Number.isFinite(projectNumber) || !Number.isFinite(installationId)) {
+    throw new Error(`--org, --project-number, and ${INSTALLATION_ID_ARG} are required`);
+  }
+  const dryRun = hasFlag('--dry-run');
+  const creds = loadGitHubAppCreds();
+  const gql = await createInstallationGraphql(creds, installationId);
+  const octokit = await createInstallationOctokit(creds, installationId);
+  const catalog = await fetchProjectFieldCatalog(gql, org, projectNumber);
+  const repos = await listInstallationRepositories(octokit);
+  const repoFullNames = repos.filter((r) => !r.archived).map((r) => r.fullName);
+
+  const connectionString = requireEnv('DATABASE_URL');
+  const pool = new Pool({ connectionString });
+  const store = new MaintenanceStore(pool);
+  try {
+    const fieldIds = fieldIdsFromCatalog(catalog);
+    await store.upsertProjectsV2Config(catalog.projectNodeId, fieldIds);
+
+    const results: Record<string, unknown> = {};
+    if (focus === 'all' || focus === 'dependabot') {
+      results.dependabot = await syncDependabotShepherdProjectItems({
+        gql,
+        octokit,
+        catalog,
+        store,
+        repoFullNames,
+        dryRun,
+      });
+    }
+    if (focus === 'all' || focus === 'security') {
+      results.security = await syncDirectSecurityPatchItems({
+        gql,
+        octokit,
+        catalog,
+        store,
+        repoFullNames,
+        dryRun,
+      });
+    }
+    console.log(JSON.stringify({ dryRun, focus, results }, null, 2));
+  } finally {
+    await pool.end();
+  }
+}
+
+async function cmdHermesWeekly(): Promise<void> {
+  const connectionString = requireEnv('DATABASE_URL');
+  const pool = new Pool({ connectionString });
+  try {
+    const snapshot = await loadHermesPortfolioSnapshot(pool);
+    const body = renderWeeklyMaintenancePlan(snapshot);
+    const weekStart = new Date();
+    weekStart.setUTCHours(0, 0, 0, 0);
+    const store = new MaintenanceStore(pool);
+    await store.insertHermesWeeklyPlan(weekStart, body);
+    console.log(body);
+  } finally {
+    await pool.end();
+  }
+}
+
+async function cmdMetricsRollup(): Promise<void> {
+  const dayArg = getArg('--day');
+  const day = dayArg ? new Date(`${dayArg}T00:00:00.000Z`) : new Date();
+  day.setUTCHours(0, 0, 0, 0);
+  const connectionString = requireEnv('DATABASE_URL');
+  const pool = new Pool({ connectionString });
+  const store = new MaintenanceStore(pool);
+  try {
+    await store.rollupMetricsForDay(day);
+    const rows = await store.listMetricsDaily(14);
+    console.log(JSON.stringify({ day: day.toISOString().slice(0, 10), rows }, null, 2));
   } finally {
     await pool.end();
   }
@@ -216,6 +349,22 @@ async function main(): Promise<void> {
     }
     case 'schedule-sample': {
       await cmdScheduleSample();
+      return;
+    }
+    case 'project-fetch-fields': {
+      await cmdProjectFetchFields();
+      return;
+    }
+    case 'scan-sync': {
+      await cmdScanSync();
+      return;
+    }
+    case 'hermes-weekly': {
+      await cmdHermesWeekly();
+      return;
+    }
+    case 'metrics-rollup': {
+      await cmdMetricsRollup();
       return;
     }
     default: {

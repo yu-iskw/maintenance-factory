@@ -8,10 +8,7 @@ export type GitHubAppCredentials = {
   clientSecret?: string;
 };
 
-export async function createInstallationOctokit(
-  creds: GitHubAppCredentials,
-  installationId: number,
-): Promise<Octokit> {
+export async function createInstallationToken(creds: GitHubAppCredentials, installationId: number): Promise<string> {
   const auth = createAppAuth({
     appId: creds.appId,
     privateKey: creds.privateKey,
@@ -24,5 +21,13 @@ export async function createInstallationOctokit(
     installationId,
   });
 
-  return new Octokit({ auth: installationAuthentication.token });
+  return installationAuthentication.token;
+}
+
+export async function createInstallationOctokit(
+  creds: GitHubAppCredentials,
+  installationId: number,
+): Promise<Octokit> {
+  const token = await createInstallationToken(creds, installationId);
+  return new Octokit({ auth: token });
 }

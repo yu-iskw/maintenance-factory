@@ -1,0 +1,74 @@
+version: 1
+global:
+  neverAutoMerge: true
+  maxGlobalConcurrentRuns: 5
+  maxRunsPerRepo: 1
+  maxRunsPerOwnerTeam: 2
+  maxDailyRuns: 30
+  retryLimitPerTask: 1
+
+allowedTaskTypes:
+  - dependabot_shepherd
+  - direct_security_patch
+  - dependency_freshness_patch
+  - repo_hygiene_scan
+  - repo_hygiene_config_pr
+  - ci_diagnosis
+
+forbiddenPaths:
+  - infra/prod/**
+  - migrations/**
+  - secrets/**
+  - .github/workflows/deploy-prod.yml
+  - '**/*prod*.tf'
+  - '**/billing/**'
+  - '**/auth/**'
+  - '**/crypto/**'
+
+repoCriticality:
+  standard:
+    scheduledRuns: true
+    requiredReviews:
+      - codeowners
+      - repo_owner
+  sensitive:
+    scheduledRuns: true
+    requiredReviews:
+      - codeowners
+      - repo_owner
+      - platform
+  critical:
+    scheduledRuns: true
+    maxConcurrentRuns: 1
+    requiredReviews:
+      - codeowners
+      - repo_owner
+      - platform
+      - senior
+
+taskPolicies:
+  dependabot_shepherd:
+    allowedRisk:
+      - Low
+      - Medium
+      - High
+    maxRetries: 1
+  direct_security_patch:
+    allowedRisk:
+      - Low
+      - Medium
+      - High
+    requireAdvisoryReference: true
+    maxRetries: 1
+  dependency_freshness_patch:
+    allowedRisk:
+      - Low
+    allowedScopes:
+      - devDependency
+      - testDependency
+      - patch
+  ci_diagnosis:
+    allowedRisk:
+      - Low
+      - Medium
+    maxRetries: 1

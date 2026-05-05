@@ -1,0 +1,18 @@
+{
+  "name": "@maintenance-factory/cursor-worker",
+  "version": "1.0.0",
+  "description": "Cursor Background Agent and GitHub Copilot coding agent backends for per-repo task execution.",
+  "license": "Apache-2.0",
+  "author": "",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@maintenance-factory/db": "workspace:*",
+    "@maintenance-factory/types": "workspace:*",
+    "octokit": "^4.1.2"
+  }
+}

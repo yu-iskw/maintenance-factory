@@ -1,0 +1,27 @@
+{
+  "name": "@maintenance-factory/webhook-server",
+  "version": "1.0.0",
+  "description": "Fastify HTTP server: GitHub App webhook receiver, admin controls, and scheduler entry point.",
+  "license": "Apache-2.0",
+  "author": "",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/rate-limit": "^10.2.1",
+    "@maintenance-factory/db": "workspace:*",
+    "@maintenance-factory/github-client": "workspace:*",
+    "@maintenance-factory/policy": "workspace:*",
+    "@maintenance-factory/reconciler": "workspace:*",
+    "@maintenance-factory/scheduler": "workspace:*",
+    "@maintenance-factory/types": "workspace:*",
+    "@octokit/webhooks": "^13.6.1",
+    "fastify": "^5.3.3",
+    "zod": "^3.23.8"
+  }
+}

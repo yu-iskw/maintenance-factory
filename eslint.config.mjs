@@ -102,6 +102,7 @@ export default [
       '.serena/**',
       '.trunk/**',
       '**/*.generated.ts',
+      'packages/db/drizzle.config.ts',
     ],
   },
   {
@@ -156,6 +157,7 @@ export default [
       ...sharedTsRules,
       ...vitestPlugin.configs.recommended.rules,
       // Tests often repeat string literals and use conditional expects; keep signal without noise.
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expectTypeOf'] }],
       'vitest/no-conditional-expect': 'off',
       'sonarjs/no-duplicate-string': 'off',
       'max-lines-per-function': ['error', { max: 700 }],

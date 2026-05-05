@@ -1,0 +1,18 @@
+{
+  "name": "@maintenance-factory/hermes",
+  "version": "1.0.0",
+  "description": "Portfolio planner, repo memory, and pattern detection using the Claude API.",
+  "license": "Apache-2.0",
+  "author": "",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
+    "@maintenance-factory/db": "workspace:*",
+    "@maintenance-factory/types": "workspace:*"
+  }
+}

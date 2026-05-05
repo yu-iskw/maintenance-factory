@@ -1,0 +1,18 @@
+{
+  "name": "@maintenance-factory/scanner",
+  "version": "1.0.0",
+  "description": "Repo inventory, Dependabot PR detection, and security alert scanning.",
+  "license": "Apache-2.0",
+  "author": "",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@maintenance-factory/github-client": "workspace:*",
+    "@maintenance-factory/types": "workspace:*",
+    "octokit": "^4.1.2"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@maintenance-factory/db",
+  "version": "1.0.0",
+  "description": "Drizzle ORM schema, migrations, and query helpers for the maintenance factory.",
+  "license": "Apache-2.0",
+  "author": "",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "migrate": "drizzle-kit migrate",
+    "generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  }
+}

@@ -13,18 +13,15 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
-    "@maintenance-factory/audit": "workspace:*",
+    "@fastify/rate-limit": "^10.2.1",
     "@maintenance-factory/db": "workspace:*",
     "@maintenance-factory/github-client": "workspace:*",
-    "@maintenance-factory/hermes": "workspace:*",
     "@maintenance-factory/policy": "workspace:*",
     "@maintenance-factory/reconciler": "workspace:*",
-    "@maintenance-factory/scanner": "workspace:*",
     "@maintenance-factory/scheduler": "workspace:*",
     "@maintenance-factory/types": "workspace:*",
     "@octokit/webhooks": "^13.6.1",
     "fastify": "^5.3.3",
-    "octokit": "^4.1.2",
     "zod": "^3.23.8"
   }
 }

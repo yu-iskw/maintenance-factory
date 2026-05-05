@@ -13,13 +13,10 @@
     "generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@maintenance-factory/types": "workspace:*",
     "drizzle-orm": "^0.41.0",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
-    "@testcontainers/postgresql": "^10.26.0",
-    "drizzle-kit": "^0.30.6",
-    "testcontainers": "^10.26.0"
+    "drizzle-kit": "^0.30.6"
   }
 }

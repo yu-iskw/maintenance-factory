@@ -9,7 +9,7 @@ import type { ReconcilerDeps } from '@maintenance-factory/reconciler';
 import type { SchedulerHandle } from '@maintenance-factory/scheduler';
 import type { AppConfig } from '@maintenance-factory/types';
 
-export interface AppOptions {
+interface AppOptions {
   config: AppConfig;
   reconcilerDeps: ReconcilerDeps;
   schedulerHandle: SchedulerHandle;

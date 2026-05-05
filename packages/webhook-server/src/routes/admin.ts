@@ -1,7 +1,7 @@
 import type { SchedulerHandle } from '@maintenance-factory/scheduler';
 import type { FastifyPluginAsync } from 'fastify';
 
-export interface AdminRoutesOptions {
+interface AdminRoutesOptions {
   schedulerHandle: SchedulerHandle;
   schedulerEnabled: { value: boolean };
 }

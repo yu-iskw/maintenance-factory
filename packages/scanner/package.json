@@ -11,7 +11,6 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@maintenance-factory/db": "workspace:*",
     "@maintenance-factory/github-client": "workspace:*",
     "@maintenance-factory/types": "workspace:*",
     "octokit": "^4.1.2"

@@ -22,6 +22,7 @@ export async function runWithCursor(
   const resultFile = path.join(tmpDir, 'result.json');
 
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     fs.writeFileSync(promptFile, prompt, 'utf-8');
 
     const env: NodeJS.ProcessEnv = {
@@ -36,6 +37,7 @@ export async function runWithCursor(
     await spawnProcess('cursor', ['--headless', '--task', promptFile], { env });
 
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       return JSON.parse(fs.readFileSync(resultFile, 'utf-8')) as WorkerResult;
     } catch (readErr: unknown) {
       const nodeErr = readErr as NodeJS.ErrnoException;

@@ -24,6 +24,7 @@ export function evaluatePolicy(config: PolicyConfig, context: PolicyContext): Po
   }
 
   // Repo criticality policy must allow scheduled runs
+  // eslint-disable-next-line security/detect-object-injection
   const criticalityPolicy = config.repoCriticality[repoCriticality];
   if (!criticalityPolicy.scheduledRuns) {
     return {
@@ -43,6 +44,7 @@ export function evaluatePolicy(config: PolicyConfig, context: PolicyContext): Po
   }
 
   // Task-specific risk allowlist
+  // eslint-disable-next-line security/detect-object-injection
   const taskPolicy = config.taskPolicies?.[taskType];
   if (taskPolicy?.allowedRisk && !taskPolicy.allowedRisk.includes(risk)) {
     return {

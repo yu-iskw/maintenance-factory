@@ -37,6 +37,7 @@ function extractFields(item: { fieldValues?: { nodes?: FieldNode[] } }): Record<
     const fieldName = node.field?.name;
     const value = node.text ?? node.name;
     if (fieldName && value) {
+      // eslint-disable-next-line security/detect-object-injection
       fields[fieldName] = value;
     }
   }

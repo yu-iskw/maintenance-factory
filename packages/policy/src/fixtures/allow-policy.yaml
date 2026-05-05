@@ -14,14 +14,14 @@ allowedTaskTypes:
   - repo_hygiene_config_pr
   - ci_diagnosis
 forbiddenPaths:
-  - "infra/prod/**"
-  - "migrations/**"
-  - "secrets/**"
-  - ".github/workflows/deploy-prod.yml"
-  - "**/*prod*.tf"
-  - "**/billing/**"
-  - "**/auth/**"
-  - "**/crypto/**"
+  - infra/prod/**
+  - migrations/**
+  - secrets/**
+  - .github/workflows/deploy-prod.yml
+  - '**/*prod*.tf'
+  - '**/billing/**'
+  - '**/auth/**'
+  - '**/crypto/**'
 repoCriticality:
   standard:
     scheduledRuns: true

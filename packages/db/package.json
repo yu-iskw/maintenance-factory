@@ -13,10 +13,10 @@
     "generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "drizzle-orm": "^0.41.0",
+    "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.30.6"
+    "drizzle-kit": "^0.31.10"
   }
 }

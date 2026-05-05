@@ -1,4 +1,3 @@
-import rateLimit from '@fastify/rate-limit';
 import { reconcileItem } from '@maintenance-factory/reconciler';
 import { Webhooks } from '@octokit/webhooks';
 
@@ -12,9 +11,6 @@ interface WebhookRoutesOptions {
 
 export const webhookRoutes: FastifyPluginAsync<WebhookRoutesOptions> = async (fastify, opts) => {
   const webhooks = new Webhooks({ secret: opts.webhookSecret });
-
-  // Rate-limit this route before signature verification to bound DoS cost.
-  await fastify.register(rateLimit, { max: 120, timeWindow: '1 minute' });
 
   // Scope the buffer parser to this plugin's routes only — admin/health routes
   // remain unaffected and use Fastify's default JSON parser.

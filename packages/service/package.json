@@ -1,0 +1,20 @@
+{
+  "name": "@maintenance-factory/service",
+  "version": "0.1.0",
+  "description": "HTTP webhook server and maintenance-factory CLI for operators.",
+  "license": "Apache-2.0",
+  "bin": {
+    "maintenance-factory": "./dist/cli/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@maintenance-factory/github": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@maintenance-factory/github",
+  "version": "0.1.0",
+  "description": "GitHub App hooks, REST/GraphQL, Projects v2, reconciliation, and repository scanning.",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@maintenance-factory/core": "workspace:*",
+    "@octokit/graphql": "^8.1.1",
+    "@octokit/rest": "^21.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  }
+}

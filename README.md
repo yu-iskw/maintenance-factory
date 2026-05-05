@@ -31,23 +31,36 @@ If you prefer a global `trunk` on your PATH, see the [Trunk installation guide](
 pnpm dev
 ```
 
-### Build
+### Build, clean, and test
 
 ```bash
 pnpm build
+pnpm clean
+pnpm test
 ```
 
-### Linting & Formatting
+Other commands (lint, format, knip, CI-style gates): [AGENTS.md — Quick commands](AGENTS.md#quick-commands).
+
+## Linting & formatting
 
 ```bash
 pnpm lint
 pnpm format
 ```
 
-## Project Structure
+## Maintenance factory (GitHub-native)
 
-- `packages/`: Monorepo packages
-  - `common/`: Shared utilities and types
+GitHub Projects–oriented control plane. Workspace packages: `@maintenance-factory/core`, `@maintenance-factory/github`, `@maintenance-factory/runtime`, `@maintenance-factory/service` (see rollout for responsibilities and field mapping).
+
+- [docs/maintenance-factory-rollout.md](docs/maintenance-factory-rollout.md)
+- [docs/end-user-guide.md](docs/end-user-guide.md) — operators, repo owners, and reviewers
+- After `pnpm build`: `pnpm maintenance-factory -- <args>`
+
+## Project structure
+
+- `packages/`: workspace libraries and apps (see `pnpm-workspace.yaml`)
+- `packages/common`: template shared utilities and types
+- `packages/core`, `packages/github`, `packages/runtime`, `packages/service`: `@maintenance-factory/*` maintenance factory code
 
 ## License
 

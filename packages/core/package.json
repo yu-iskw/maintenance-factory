@@ -1,0 +1,17 @@
+{
+  "name": "@maintenance-factory/core",
+  "version": "0.1.0",
+  "description": "Domain types, policy YAML, audit helpers, and workflow registry for the maintenance factory.",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  }
+}
